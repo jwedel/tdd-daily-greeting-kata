@@ -8,9 +8,10 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.Month;
 import java.time.ZoneId;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -46,4 +47,43 @@ public class DailyGreetingTest
         when(clockMock.instant()).thenReturn(Instant.parse("2021-12-24T00:00:00Z"));
         assertThat(instance.getGreeting()).isEqualTo("Merry Christmas!");
     }
+
+    @Test
+    void should_throw_exception_whan_adding_null_as_matcher() {
+        assertThatCode(() -> instance.addDateMatcher(null, "Hello"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void should_throw_exception_whan_adding_null_as_greeting() {
+        assertThatCode(() -> instance.addDateMatcher(new DayAndMonthMatcher(8, Month.SEPTEMBER), null))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void should_allow_adding_a_birthday() {
+        instance.addDateMatcher(new DayAndMonthMatcher(8, Month.SEPTEMBER), "Happy Birthday, Jan!");
+        when(clockMock.instant()).thenReturn(Instant.parse("2022-09-08T00:00:00Z"));
+
+        assertThat(instance.getGreeting()).isEqualTo("Happy Birthday, Jan!");
+    }
+
+    @Test
+    void should_allow_adding_two_birthdays_and_match_first() {
+        instance.addDateMatcher(new DayAndMonthMatcher(8, Month.OCTOBER), "Happy Birthday, Nora!");
+        instance.addDateMatcher(new DayAndMonthMatcher(8, Month.SEPTEMBER), "Happy Birthday, Jan!");
+        when(clockMock.instant()).thenReturn(Instant.parse("2022-09-08T00:00:00Z"));
+
+        assertThat(instance.getGreeting()).isEqualTo("Happy Birthday, Jan!");
+    }
+
+    @Test
+    void should_allow_adding_two_birthdays_and_match_second() {
+        instance.addDateMatcher(new DayAndMonthMatcher(8, Month.OCTOBER), "Happy Birthday, Nora!");
+        instance.addDateMatcher(new DayAndMonthMatcher(8, Month.SEPTEMBER), "Happy Birthday, Jan!");
+        when(clockMock.instant()).thenReturn(Instant.parse("2022-10-08T00:00:00Z"));
+
+        assertThat(instance.getGreeting()).isEqualTo("Happy Birthday, Nora!");
+    }
+
 }
